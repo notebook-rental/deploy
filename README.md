@@ -68,7 +68,7 @@ deploy/
 │   ├── ml-inference/base/        #   + headless Service
 │   └── ingress/base/             #   Ingress 2개(기본, SSE 전용)
 ├── overlays/prod/                # 운영 환경에서 바꾸는 것
-│   ├── api/                      #   네임스페이스, 이미지 태그, ghcr-pull
+│   ├── api/                      #   네임스페이스, 이미지 태그, ghcr-pull, hostAliases
 │   ├── web/
 │   ├── ml-inference/
 │   └── ingress/                  #   도메인(host)
@@ -94,7 +94,7 @@ deploy/
 |------|------|------|
 | 1 | Rancher에서 네임스페이스 `notebook-rental` 만들기 | [docs/secrets.md](docs/secrets.md) 1절 |
 | 2 | Rancher에서 Secret `notebook-rental-secrets` 만들기 | [docs/secrets.md](docs/secrets.md) 2절 |
-| 3 | (api repo가 Private인 동안) Secret `ghcr-pull` 만들기 | [docs/secrets.md](docs/secrets.md) 3절 |
+| 3 | (ghcr 패키지가 Private인 동안) Secret `ghcr-pull` 만들기 | [docs/secrets.md](docs/secrets.md) 3절 |
 | 4 | 외부 Nginx에 프록시 설정 | [docs/external-nginx.md](docs/external-nginx.md) |
 | 5 | 코드 repo에 `DEPLOY_REPO_TOKEN` 등록, release 워크플로 추가 | [docs/ci-release.md](docs/ci-release.md) |
 | 6 | Argo CD에 프로젝트 `notebook-rental`과 ApplicationSet 적용 | [docs/argocd.md](docs/argocd.md) 2절 |

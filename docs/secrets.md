@@ -95,9 +95,10 @@ kubectl -n notebook-rental get secret notebook-rental-secrets -o jsonpath='{.dat
 
 ---
 
-## 3. 이미지 받기용 Secret (`ghcr-pull`, api repo가 Private인 동안만)
+## 3. 이미지 받기용 Secret (`ghcr-pull`, ghcr 패키지가 Private인 동안)
 
-공개 패키지는 누구나 받을 수 있지만, `api` repo가 Private이면 그 이미지 패키지도 Private이라 클러스터가 로그인해야 받을 수 있다.
+공개 패키지는 누구나 받을 수 있지만, Private 패키지는 클러스터가 로그인해야 받을 수 있다. 로그인 없이 받으려 하면 파드 Events에
+`failed to fetch anonymous token ... 403 Forbidden`이 나온다. 코드 repo가 Private이면 그 repo가 올린 패키지도 처음에는 Private이다.
 
 1. GitHub → 오른쪽 위 프로필 → **Settings → Developer settings → Personal access tokens → Tokens (classic)** → **Generate new token (classic)**
    - Note: `notebook-rental ghcr pull`, Expiration: 원하는 기간, Scope: **`read:packages` 하나만**
@@ -106,9 +107,9 @@ kubectl -n notebook-rental get secret notebook-rental-secrets -o jsonpath='{.dat
 3. Namespace `notebook-rental`, Name `ghcr-pull`
 4. Registry Domain Name: **Custom** → `ghcr.io`, Username: GitHub 사용자 이름, Password: 1번 토큰 → **Create**
 
-`overlays/prod/api/kustomization.yaml`이 api 파드에 이 Secret을 `imagePullSecrets`로 건다.
-api repo를 Public으로 바꾸고 패키지도 Public으로 바꾸면, 그 패치를 지우고 이 Secret도 지운다.
-(Secret이 없어도 파드는 뜬다. 공개 이미지는 로그인 없이 받기 때문이다.)
+`overlays/prod/api`, `overlays/prod/web`, `overlays/prod/ml-inference`의 `kustomization.yaml`이 **세 앱 파드 모두에** 이 Secret을 `imagePullSecrets`로 건다.
+토큰을 만든 GitHub 계정이 `notebook-rental` 조직의 패키지 3개를 모두 읽을 수 있어야 한다(조직 멤버면 된다).
+패키지를 모두 Public으로 바꾸면 이 Secret은 없어도 된다. Secret이 없어도 파드는 뜬다. 공개 이미지는 로그인 없이 받기 때문이다.
 
 ---
 

@@ -25,3 +25,13 @@ patches:
           - ip: 10.116.64.20
             hostnames:
               - storage.java21.net
+  # ghcr 패키지가 Private인 동안 이미지를 받으려면 로그인 정보가 필요하다. Rancher에서 만든 Secret ghcr-pull 을 쓴다.
+  # 패키지를 Public으로 바꿔도 그대로 둬도 된다(Secret이 없어도 공개 이미지는 받는다).
+  - target:
+      kind: Deployment
+      name: ml-inference
+    patch: |-
+      - op: add
+        path: /spec/template/spec/imagePullSecrets
+        value:
+          - name: ghcr-pull

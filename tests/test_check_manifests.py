@@ -77,6 +77,22 @@ def test_api_uses_pull_secret_and_app_secret():
 
 
 @needs_kustomize
+@pytest.mark.parametrize("app", ["api", "web", "ml-inference"])
+def test_every_workload_uses_pull_secret(app):
+    # ghcr 패키지가 Private이면 익명 토큰이 403을 받는다. 모든 Deployment가 ghcr-pull 로 로그인해야 한다.
+    manifests = cm.render(ROOT / "overlays" / "prod" / app)
+    for dep in cm.of_kind(manifests, "Deployment"):
+        assert dep["spec"]["template"]["spec"]["imagePullSecrets"] == [{"name": "ghcr-pull"}]
+
+
+@needs_kustomize
+def test_ml_keeps_host_alias_with_pull_secret():
+    manifests = cm.render(ROOT / "overlays" / "prod" / "ml-inference")
+    spec = cm.of_kind(manifests, "Deployment")[0]["spec"]["template"]["spec"]
+    assert spec["hostAliases"] == [{"ip": "10.116.64.20", "hostnames": ["storage.java21.net"]}]
+
+
+@needs_kustomize
 def test_ingress_routes_and_host():
     manifests = cm.render(ROOT / "overlays" / "prod" / "ingress")
     routes = {}

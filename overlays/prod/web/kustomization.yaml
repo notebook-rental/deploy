@@ -10,3 +10,14 @@ resources:
 images:
   - name: ghcr.io/notebook-rental/web
     newTag: bootstrap
+
+patches:
+  # ghcr 패키지가 Private인 동안 이미지를 받으려면 로그인 정보가 필요하다. Rancher에서 만든 Secret ghcr-pull 을 쓴다.
+  - target:
+      kind: Deployment
+      name: web
+    patch: |-
+      - op: add
+        path: /spec/template/spec/imagePullSecrets
+        value:
+          - name: ghcr-pull
