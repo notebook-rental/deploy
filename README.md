@@ -74,12 +74,11 @@ deploy/
 │   └── ingress/                  #   도메인(host)
 ├── argocd/
 │   ├── project.yaml              # Argo CD 프로젝트(허용 repo·네임스페이스·리소스 종류), 처음 한 번 적용
-│   ├── notebook-rental.yaml      # 처음 한 번 등록하는 부모 Application
-│   └── apps/                     # 부모가 만드는 자식 Application 4개
+│   └── applicationset.yaml       # overlays/prod/* 폴더마다 Application을 만드는 ApplicationSet, 처음 한 번 적용
 ├── .github/workflows/
 │   ├── validate.yml              # 이 repo 검사(테스트, 스키마, 규칙)
 │   └── release-image.yml         # 코드 repo가 불러 쓰는 이미지 빌드·태그 갱신 워크플로
-├── tools/                        # 규칙 검사기, 태그 갱신 스크립트(Python)
+├── tools/                        # 규칙 검사기, 태그 갱신, ApplicationSet 펼쳐 보기(Python)
 ├── tests/                        # 위 도구의 테스트
 └── docs/                         # 설명 문서
 ```
@@ -98,7 +97,7 @@ deploy/
 | 3 | (api repo가 Private인 동안) Secret `ghcr-pull` 만들기 | [docs/secrets.md](docs/secrets.md) 3절 |
 | 4 | 외부 Nginx에 프록시 설정 | [docs/external-nginx.md](docs/external-nginx.md) |
 | 5 | 코드 repo에 `DEPLOY_REPO_TOKEN` 등록, release 워크플로 추가 | [docs/ci-release.md](docs/ci-release.md) |
-| 6 | Argo CD에 프로젝트 `notebook-rental`과 부모 Application 등록 | [docs/argocd.md](docs/argocd.md) 2절 |
+| 6 | Argo CD에 프로젝트 `notebook-rental`과 ApplicationSet 적용 | [docs/argocd.md](docs/argocd.md) 2절 |
 | 7 | 첫 이미지 push 후 ghcr 패키지를 Public으로 | [docs/ci-release.md](docs/ci-release.md) 4절 |
 
 > 6번을 먼저 해도 괜찮다. 코드 repo가 아직 이미지를 만들지 않았으면 태그가 `bootstrap`이라

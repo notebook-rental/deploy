@@ -1,6 +1,6 @@
 # Argo CD 프로젝트(AppProject): 이 서비스의 Application들이 "무엇을 읽고(어느 repo) 어디에 배포해도 되는지"를 정한다.
-# 부모 Application보다 먼저, 처음 한 번만 직접 적용한다(docs/argocd.md 2절).
-# 부모 앱이 이 파일을 관리하지 않게 일부러 argocd/apps 밖에 둔다. 앱이 자기 권한을 스스로 넓히지 못하게 하려는 것이다.
+# ApplicationSet(argocd/applicationset.yaml)보다 먼저, 처음 한 번만 직접 적용한다(docs/argocd.md 2절).
+# Argo CD 앱이 이 파일을 관리하지 않는다. 앱이 자기 권한을 스스로 넓히지 못하게 하려는 것이다.
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
 metadata:
@@ -12,18 +12,14 @@ spec:
   sourceRepos:
     - https://github.com/notebook-rental/deploy.git
   destinations:
-    # 부모 앱이 자식 Application을 만드는 곳
-    - server: https://kubernetes.default.svc
-      namespace: argocd
-    # 자식 앱이 api, web, ml-inference, ingress 를 배포하는 곳
+    # api, web, ml-inference, ingress 를 배포하는 곳.
+    # (Application 객체는 ApplicationSet이 argocd 네임스페이스에 만들지만, 그것은 배포 대상이 아니라서 여기 넣지 않는다)
     - server: https://kubernetes.default.svc
       namespace: notebook-rental
   # 클러스터 전체 리소스(Namespace, ClusterRole 등)는 만들지 않는다. 목록을 비워 두면 모두 막힌다.
   clusterResourceWhitelist: []
   # 네임스페이스 안 리소스 중 이 서비스가 쓰는 종류만 허용한다.
   namespaceResourceWhitelist:
-    - group: argoproj.io
-      kind: Application
     - group: ""
       kind: ConfigMap
     - group: ""

@@ -1,0 +1,57 @@
+# Argo CD ApplicationSet: overlays/prod/ 아래 폴더마다 Application을 하나씩 자동으로 만든다.
+#   overlays/prod/api           → notebook-rental-api
+#   overlays/prod/web           → notebook-rental-web
+#   overlays/prod/ml-inference  → notebook-rental-ml-inference
+#   overlays/prod/ingress       → notebook-rental-ingress
+# 앱을 하나 더 만들려면 overlays/prod/<이름>/kustomization.yaml 만 추가하면 된다.
+# 처음 한 번만 직접 적용한다(docs/argocd.md 2절). 이 파일은 Argo CD 앱이 관리하지 않는다.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: notebook-rental
+  namespace: argocd
+spec:
+  # {{ }} 안을 Go 템플릿으로 해석한다. 값이 없으면 빈 문자열 대신 오류를 낸다(오타 방지).
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    # git 디렉터리 생성기: repo의 overlays/prod/* 폴더 목록을 읽어 폴더마다 값 하나를 만든다.
+    - git:
+        repoURL: https://github.com/notebook-rental/deploy.git
+        revision: main
+        directories:
+          - path: overlays/prod/*
+  # ApplicationSet을 지워도 실제 서비스(파드, Service 등)는 지우지 않는다.
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+  template:
+    metadata:
+      # 예: notebook-rental-api (path.basename = 폴더 이름)
+      name: "notebook-rental-{{.path.basename}}"
+      labels:
+        app.kubernetes.io/part-of: notebook-rental
+    spec:
+      project: notebook-rental
+      source:
+        repoURL: https://github.com/notebook-rental/deploy.git
+        targetRevision: main
+        path: "{{.path.path}}"
+      destination:
+        server: https://kubernetes.default.svc
+        # 네임스페이스는 Rancher에서 미리 만든다(Secret을 먼저 넣어야 하므로). Argo CD는 만들지 않는다.
+        namespace: notebook-rental
+      syncPolicy:
+        # deploy repo의 main이 바뀌면 자동으로 반영하고(automated),
+        # repo에서 지운 리소스는 클러스터에서도 지우고(prune),
+        # 누가 클러스터에서 손으로 바꾸면 repo 상태로 되돌린다(selfHeal).
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=false
+        retry:
+          limit: 5
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m

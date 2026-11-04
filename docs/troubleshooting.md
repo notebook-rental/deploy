@@ -50,7 +50,7 @@ kubectl get pods -A -o custom-columns=NS:.metadata.namespace,NAME:.metadata.name
 
 | 증상 | 확인할 것 |
 |------|-----------|
-| 자식 Application이 안 생김 | 부모 `notebook-rental`이 Synced인가, Argo CD가 `argocd` 네임스페이스에 있나 |
+| Application이 안 생김 | ApplicationSets 화면의 `notebook-rental`을 눌러 오류 확인(`kubectl -n argocd describe applicationset notebook-rental`의 Conditions). Argo CD가 `argocd` 네임스페이스에 있나 |
 | `namespaces "notebook-rental" not found` | Rancher에서 네임스페이스를 먼저 만든다([secrets.md](secrets.md) 1절) |
 | 계속 OutOfSync | 앱 → DIFF. 클러스터에서 누가 바꾼 값이면 selfHeal이 되돌린다. 다른 컨트롤러가 값을 바꾸는 필드면 알려 준다 |
 | 코드는 push 했는데 배포가 안 됨 | [ci-release.md](ci-release.md) 5절 |

@@ -42,6 +42,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - name: kustomize, kubeconform 설치
         run: |
           curl -sSL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${KUSTOMIZE_VERSION}/kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz" \
@@ -53,13 +56,16 @@ jobs:
           set -euo pipefail
           # Argo CD Application 같은 CRD 스키마는 CRDs-catalog 에서 가져온다.
           crd='https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
-          for dir in overlays/prod/* argocd/apps; do
+          for dir in overlays/prod/*; do
             echo "== $dir"
             kustomize build "$dir" | kubeconform -strict -summary \
               -kubernetes-version "$K8S_VERSION" \
               -schema-location default -schema-location "$crd" -
           done
-          kubeconform -strict -summary -schema-location default -schema-location "$crd" argocd/notebook-rental.yaml argocd/project.yaml
+          kubeconform -strict -summary -schema-location default -schema-location "$crd" argocd/applicationset.yaml argocd/project.yaml
+          # ApplicationSet이 만들 Application들도 펼쳐서 검사한다.
+          pip install -q -r requirements-dev.txt
+          python -m tools.expand_appset | kubeconform -strict -summary -schema-location default -schema-location "$crd" -
 
   actionlint:
     runs-on: ubuntu-latest
