@@ -14,6 +14,7 @@ from pathlib import Path
 import pytest
 
 from tools import check_manifests as cm
+from tools import expand_appset
 
 ROOT = Path(__file__).resolve().parent.parent
 needs_kustomize = pytest.mark.skipif(shutil.which("kustomize") is None, reason="kustomize 미설치")
@@ -87,22 +88,30 @@ def test_ingress_routes_and_host():
     assert routes == {"/": "web", "/api": "api", "/api/v1/inspections": "api"}
 
 
-@needs_kustomize
-def test_argocd_apps_point_at_existing_overlays():
-    manifests = cm.render(ROOT / "argocd" / "apps")
-    apps = cm.of_kind(manifests, "Application")
-    assert len(apps) == 4
+def test_applicationset_generates_one_app_per_overlay():
+    apps = expand_appset.expand(expand_appset.load_appset())
+    names = sorted(a["metadata"]["name"] for a in apps)
+    assert names == ["notebook-rental-api", "notebook-rental-ingress",
+                     "notebook-rental-ml-inference", "notebook-rental-web"]
     for app in apps:
         spec = app["spec"]
         assert (ROOT / spec["source"]["path"] / "kustomization.yaml").exists()
         assert spec["destination"]["namespace"] == "notebook-rental"
         assert spec["syncPolicy"]["automated"] == {"prune": True, "selfHeal": True}
+        assert spec["syncPolicy"]["syncOptions"] == ["CreateNamespace=false"]
 
 
-def test_root_application_points_at_child_folder():
-    root_app = cm.load_manifests((ROOT / "argocd" / "notebook-rental.yaml").read_text())[0]
-    assert root_app["spec"]["source"]["path"] == "argocd/apps"
-    assert (ROOT / "argocd" / "apps" / "kustomization.yaml").exists()
+def test_applicationset_keeps_resources_when_deleted():
+    appset = expand_appset.load_appset()
+    assert appset["metadata"] == {"name": "notebook-rental", "namespace": "argocd"}
+    assert appset["spec"]["syncPolicy"]["preserveResourcesOnDeletion"] is True
+    assert appset["spec"]["goTemplate"] is True
+
+
+def test_old_app_of_apps_files_are_gone():
+    """ApplicationSet과 옛 부모 앱이 같은 Application을 두고 다투지 않게 한다."""
+    assert not (ROOT / "argocd" / "apps").exists()
+    assert not (ROOT / "argocd" / "notebook-rental.yaml").exists()
 
 
 def test_repo_contains_no_secret_manifests():
@@ -281,12 +290,12 @@ def load_project():
     return cm.load_manifests((ROOT / "argocd" / "project.yaml").read_text())[0]
 
 
-def test_project_allows_repo_and_both_namespaces():
+def test_project_allows_repo_and_service_namespace_only():
     spec = load_project()["spec"]
     assert spec["sourceRepos"] == ["https://github.com/notebook-rental/deploy.git"]
     namespaces = {d["namespace"] for d in spec["destinations"]
                   if d["server"] == "https://kubernetes.default.svc"}
-    assert namespaces == {"argocd", "notebook-rental"}
+    assert namespaces == {"notebook-rental"}
     assert spec["clusterResourceWhitelist"] == []
 
 
@@ -299,20 +308,16 @@ def test_project_never_allows_secrets():
 def test_every_rendered_kind_is_allowed_by_project():
     """새 리소스 종류(HPA 등)를 추가하면 프로젝트 허용 목록도 같이 고쳐야 sync가 된다."""
     allowed = {(r["group"], r["kind"]) for r in load_project()["spec"]["namespaceResourceWhitelist"]}
-    targets = cm.default_targets(ROOT) + [ROOT / "argocd" / "apps"]
-    for target in targets:
+    for target in cm.default_targets(ROOT):
         for m in cm.render(target):
             group = m["apiVersion"].split("/")[0] if "/" in m["apiVersion"] else ""
             assert (group, m["kind"]) in allowed, f"{target.name}: {m['kind']}"
 
 
-@needs_kustomize
 def test_all_applications_use_project_and_allowed_destinations():
     spec = load_project()["spec"]
     dests = {(d["server"], d["namespace"]) for d in spec["destinations"]}
-    apps = cm.render(ROOT / "argocd" / "apps")
-    apps.append(cm.load_manifests((ROOT / "argocd" / "notebook-rental.yaml").read_text())[0])
-    for app in apps:
+    for app in expand_appset.expand(expand_appset.load_appset()):
         assert app["metadata"]["namespace"] == "argocd"
         assert app["spec"]["project"] == "notebook-rental"
         d = app["spec"]["destination"]
