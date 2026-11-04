@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: notebook-rental
+
+resources:
+  - ../../../apps/ingress/base
+
+patches:
+  # 서비스 도메인. 외부 Nginx가 Host 헤더를 그대로 넘겨야 이 규칙에 맞는다(docs/external-nginx.md).
+  - target:
+      kind: Ingress
+    patch: |-
+      - op: add
+        path: /spec/rules/0/host
+        value: notebook-rental.java21.net

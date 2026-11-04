@@ -1,0 +1,28 @@
+# 기본 규칙: / → web(SPA), /api → api(Spring).
+# /internal/** 은 일부러 넣지 않는다. ml-inference만 클러스터 안에서 부른다.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: notebook-rental
+  annotations:
+    # 사진 작업본 1장 약 1MB. 외부 Nginx의 client_max_body_size 20m 과 같게 맞춘다.
+    nginx.ingress.kubernetes.io/proxy-body-size: "20m"
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  name: http
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web
+                port:
+                  name: http

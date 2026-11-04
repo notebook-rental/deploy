@@ -1,0 +1,16 @@
+# headless Service(clusterIP: None): DNS를 물으면 대표 주소 하나가 아니라 "모든 ml 파드의 주소"를 돌려준다.
+# api는 이 이름으로 파드 목록을 얻어 /prefetch, /models/reload 를 모든 파드에 보낸다.
+apiVersion: v1
+kind: Service
+metadata:
+  name: ml-inference-headless
+spec:
+  clusterIP: None
+  # Ready가 아닌(워밍업 중인) 파드는 목록에서 뺀다. 새 파드는 시작할 때 스스로 모델을 받는다.
+  publishNotReadyAddresses: false
+  selector:
+    app.kubernetes.io/name: ml-inference
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http

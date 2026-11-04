@@ -1,0 +1,18 @@
+# ml-inference 파드로 들어오는 연결은 api 파드에서만 받는다.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ml-inference
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: ml-inference
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: api
+      ports:
+        - port: 8000
+          protocol: TCP

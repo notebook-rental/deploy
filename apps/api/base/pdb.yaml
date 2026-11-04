@@ -1,0 +1,10 @@
+# 노드 점검(drain) 중에도 api 파드가 최소 1개는 떠 있게 한다.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: api
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: api

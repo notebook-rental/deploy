@@ -1,0 +1,119 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-inference
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ml-inference
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      # 새 파드가 모델 로드·워밍업을 끝내고 Ready가 된 뒤에만 옛 파드를 내린다.
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    spec:
+      # 종료 신호를 받으면 새 요청은 받지 않고, 처리 중인 비교만 끝낸다(최대 60초).
+      terminationGracePeriodSeconds: 60
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: ml-inference
+      containers:
+        - name: ml-inference
+          image: ghcr.io/notebook-rental/ml-inference
+          ports:
+            - name: http
+              containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: ml-inference-config
+          # ml은 DB 비밀번호와 JWT 키가 필요 없으므로 Secret 전체를 넣지 않고 필요한 키만 꺼내 쓴다.
+          env:
+            - name: MINIO_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: notebook-rental-secrets
+                  key: MINIO_ENDPOINT
+            # ml 전용 MinIO 사용자(원본 삭제 권한 없음, infra/README.md 권한 표).
+            - name: MINIO_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: notebook-rental-secrets
+                  key: ML_MINIO_ACCESS_KEY
+            - name: MINIO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: notebook-rental-secrets
+                  key: ML_MINIO_SECRET_KEY
+            - name: INTERNAL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: notebook-rental-secrets
+                  key: INTERNAL_TOKEN
+          # 시작 시 MinIO에서 운영 모델을 받고 더미 이미지로 한 번 추론(워밍업)한다.
+          # 최대 10분(5초 x 120회) 기다린다.
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 5
+            failureThreshold: 120
+          # /readyz 는 모델 로드·워밍업이 끝나야 200. 종료 중이거나 동시 처리 상한이면 503.
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 5
+            failureThreshold: 2
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "5"]
+          # 속도 때문에 CPU limits는 두지 않는다. limits가 있으면 CPU가 깎여(throttling)
+          # 컷당 추론 시간이 몇 배로 튄다(research R16 "CPU 자원").
+          # 메모리는 limits = requests 로 두어 다른 파드를 밀어내지 않게 한다.
+          resources:
+            requests:
+              cpu: "4"
+              memory: 4Gi
+            limits:
+              memory: 4Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: model-cache
+              mountPath: /var/cache/models
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 1Gi
+        - name: model-cache
+          emptyDir:
+            sizeLimit: 4Gi

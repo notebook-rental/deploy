@@ -1,0 +1,26 @@
+# 검사 결과 실시간 알림(SSE)이 지나가는 경로만 따로 둔다.
+# Ingress의 annotations는 Ingress 객체 하나 전체에 적용되므로, 버퍼링 끄기와 긴 시간 제한을
+# 이 경로에만 주려고 객체를 나눴다. ingress-nginx는 더 긴 경로(/api/v1/inspections)를 먼저 고른다.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: notebook-rental-sse
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "20m"
+    # 버퍼링되면 컷 결과가 모였다가 한꺼번에 늦게 뜬다.
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"
+    # 촬영하는 동안 SSE 연결이 끊기지 않게 1시간까지 기다린다.
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /api/v1/inspections
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  name: http
