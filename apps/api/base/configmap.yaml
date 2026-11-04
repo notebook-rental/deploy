@@ -12,4 +12,7 @@ data:
   # 모든 ml 파드에 알림(/prefetch, /models/reload)을 보낼 때 쓰는 headless Service 이름.
   ML_HEADLESS_HOST: ml-inference-headless
   ML_PORT: "8000"
-  JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError
+  # 로그와 서버 시각을 한국 시간으로 맞춘다. TZ는 운영체제, user.timezone은 JVM 기준.
+  # DB 컬럼은 timestamptz라 저장되는 시각(절대 시점)은 이 값과 상관없다.
+  TZ: Asia/Seoul
+  JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError -Duser.timezone=Asia/Seoul

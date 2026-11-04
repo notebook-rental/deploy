@@ -26,6 +26,10 @@ spec:
       containers:
         - name: web
           image: ghcr.io/notebook-rental/web
+          env:
+            # nginx 접속 로그 시각을 한국 시간으로 맞춘다(nginx-unprivileged alpine 이미지에 tzdata가 들어 있다).
+            - name: TZ
+              value: Asia/Seoul
           ports:
             # 비루트 nginx는 1024 미만 포트를 못 열어서 8080을 쓴다.
             - name: http
