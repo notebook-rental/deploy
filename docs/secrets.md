@@ -41,8 +41,8 @@ Secret은 네임스페이스 안에 만들어지므로 네임스페이스부터 
 
 | 키 | 누가 씀 | 값의 모양(예시, 실제 값 아님) | 설명 |
 |----|---------|-------------------------------|------|
-| `DB_URL` | api | `jdbc:postgresql://<DB 호스트>:5432/notebook_rental` | 기존 PostgreSQL에 만든 DB 주소. JDBC 형식 |
-| `DB_USERNAME` | api | `notebook_rental` | 이 서비스 전용 DB 계정 |
+| `DB_URL` | api | `jdbc:postgresql://<DB 호스트>:<포트>/<데이터베이스>?currentSchema=<스키마>` | 발급받은 DB 주소. JDBC 형식. 전용 스키마를 쓰므로 `currentSchema`를 꼭 붙인다. 실제 값은 비공개 docs repo `infra/README.md` 6절 |
+| `DB_USERNAME` | api | `<발급받은 계정>` | 이 서비스 전용 DB 계정 |
 | `DB_PASSWORD` | api | | 위 계정 비밀번호 |
 | `MINIO_ENDPOINT` | api, ml | `http://storage.java21.net:8000` | MinIO S3 API 주소. HTTPS로 바꾸면 이 값만 고친다 |
 | `MINIO_ACCESS_KEY` | api | | api 전용 MinIO 사용자의 Access Key |
