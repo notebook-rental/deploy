@@ -4,7 +4,7 @@
 **이 repo의 `main` 브랜치에 있는 내용이 곧 운영 클러스터의 상태**가 되도록 Argo CD가 계속 맞춘다.
 
 > 이 repo는 **공개(Public)** 다. 비밀번호, 접근 키, 토큰은 어떤 파일에도 넣지 않는다.
-> 내부 IP도 넣지 않는 것이 원칙이고, 예외는 DB 라우팅용 `hostAliases` 하나뿐이다(사설 주소 10.x라 밖에서는 닿지 않음, `overlays/prod/api`).
+> 내부 IP도 넣지 않는 것이 원칙이고, 예외는 DB·MinIO 라우팅용 `hostAliases`뿐이다(사설 주소 10.x라 밖에서는 닿지 않음, `overlays/prod/api`, `overlays/prod/ml-inference`).
 > 비밀값은 Rancher에서 직접 만드는 Secret에만 있다 → [docs/secrets.md](docs/secrets.md)
 
 설계 근거는 docs repo의 `specs/001-return-damage-inspection/research.md` R16과 `infra/README.md`에 있다.

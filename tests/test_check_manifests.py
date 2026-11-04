@@ -325,6 +325,17 @@ def test_api_routes_db_host_to_internal_address():
     """DB 호스트 s3.java21.net 은 api 파드 안에서 10.116.64.13 으로 가야 한다."""
     manifests = cm.render(ROOT / "overlays" / "prod" / "api")
     spec = cm.of_kind(manifests, "Deployment")[0]["spec"]["template"]["spec"]
-    assert spec["hostAliases"] == [{"ip": "10.116.64.13", "hostnames": ["s3.java21.net"]}]
+    assert spec["hostAliases"] == [
+        {"ip": "10.116.64.13", "hostnames": ["s3.java21.net"]},
+        {"ip": "10.116.64.20", "hostnames": ["storage.java21.net"]},
+    ]
     # 이미지 받기용 비밀값 패치도 그대로 남아 있어야 한다.
     assert spec["imagePullSecrets"] == [{"name": "ghcr-pull"}]
+
+
+@needs_kustomize
+def test_ml_routes_minio_host_to_internal_address():
+    """ml은 MinIO만 쓴다: storage.java21.net → 10.116.64.20."""
+    manifests = cm.render(ROOT / "overlays" / "prod" / "ml-inference")
+    spec = cm.of_kind(manifests, "Deployment")[0]["spec"]["template"]["spec"]
+    assert spec["hostAliases"] == [{"ip": "10.116.64.20", "hostnames": ["storage.java21.net"]}]
