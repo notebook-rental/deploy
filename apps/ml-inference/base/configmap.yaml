@@ -4,6 +4,8 @@ metadata:
   name: ml-inference-config
 data:
   APP_PROFILE: prod
+  # 로그 시각을 한국 시간으로 맞춘다(python:3.12-slim 이미지에 시간대 자료 tzdata가 들어 있다).
+  TZ: Asia/Seoul
   STORAGE_BUCKET: notebook-rental
   # 작업 가져가기(/internal/jobs/claim)와 활성 모델 확인에 쓰는 api 주소.
   API_BASE_URL: http://api:8080

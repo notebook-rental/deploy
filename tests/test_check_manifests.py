@@ -93,6 +93,22 @@ def test_ml_keeps_host_alias_with_pull_secret():
 
 
 @needs_kustomize
+@pytest.mark.parametrize("app", ["api", "web", "ml-inference"])
+def test_every_workload_runs_on_korean_time(app):
+    manifests = cm.render(ROOT / "overlays" / "prod" / app)
+    configmaps = {c["metadata"]["name"]: c.get("data", {}) for c in cm.of_kind(manifests, "ConfigMap")}
+    for dep in cm.of_kind(manifests, "Deployment"):
+        for c in dep["spec"]["template"]["spec"]["containers"]:
+            env = {e["name"]: e.get("value") for e in c.get("env", [])}
+            for src in c.get("envFrom", []):
+                if "configMapRef" in src:
+                    env.update(configmaps[src["configMapRef"]["name"]])
+            assert env.get("TZ") == "Asia/Seoul"
+            if app == "api":
+                assert "-Duser.timezone=Asia/Seoul" in env["JAVA_TOOL_OPTIONS"]
+
+
+@needs_kustomize
 def test_ingress_routes_and_host():
     manifests = cm.render(ROOT / "overlays" / "prod" / "ingress")
     routes = {}

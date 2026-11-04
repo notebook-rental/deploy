@@ -13,6 +13,7 @@
 | 종료 | `SIGTERM`을 받으면 새 요청을 받지 않고, 처리 중인 요청만 끝낸 뒤 종료(최대 55초) | 배포 중 요청 끊김 방지. 쿠버네티스는 60초 뒤 강제 종료 |
 | `sleep` 명령 | 이미지에 있어야 한다(preStop에서 `sleep 5`) | distroless처럼 셸 도구가 없는 이미지는 안 된다 |
 | 로그 | 표준 출력(stdout)으로. 파일에 쓰지 않는다 | Rancher 화면에서 바로 본다 |
+| 시간대 | 매니페스트가 `TZ=Asia/Seoul`을 넣는다. 이미지에 시간대 자료(`tzdata`, `/usr/share/zoneinfo`)가 있어야 한다. 지금 쓰는 실행 이미지 3개(`eclipse-temurin:21-jre`, `python:3.12-slim`, `nginx-unprivileged:1.27-alpine`)에는 이미 들어 있다 | 로그 시각을 한국 시간으로 본다. DB는 `timestamptz`라 저장 값은 시간대와 상관없다 |
 
 ## api (Spring Boot)
 
@@ -59,7 +60,8 @@ management:
 | `ML_BASE_URL` | ConfigMap | `http://ml-inference:8000` (요청 하나를 파드 하나에) |
 | `ML_HEADLESS_HOST` | ConfigMap | `ml-inference-headless` (DNS로 모든 ml 파드 주소를 얻어 `/prefetch`, `/models/reload` 전송) |
 | `ML_PORT` | ConfigMap | `8000` |
-| `JAVA_TOOL_OPTIONS` | ConfigMap | JVM 메모리 옵션 |
+| `TZ` | ConfigMap | `Asia/Seoul` |
+| `JAVA_TOOL_OPTIONS` | ConfigMap | JVM 메모리 옵션, `-Duser.timezone=Asia/Seoul`(JVM 기본 시간대) |
 | `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` | Secret `notebook-rental-secrets` | |
 | `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY` | Secret | api 전용 MinIO 사용자 |
 | `JWT_SECRET`, `INTERNAL_TOKEN` | Secret | |
@@ -83,6 +85,7 @@ api는 Secret 전체를 받으므로 `ML_MINIO_ACCESS_KEY`, `ML_MINIO_SECRET_KEY
 | 이름 | 출처 | 값 |
 |------|------|----|
 | `APP_PROFILE` | ConfigMap `ml-inference-config` | `prod` |
+| `TZ` | ConfigMap | `Asia/Seoul` |
 | `STORAGE_BUCKET` | ConfigMap | `notebook-rental` |
 | `API_BASE_URL` | ConfigMap | `http://api:8080` (`/internal/jobs/claim`, 활성 모델 확인) |
 | `INFERENCE_THREADS`, `OMP_NUM_THREADS` | ConfigMap | `4` (= CPU requests) |
