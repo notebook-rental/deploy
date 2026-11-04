@@ -4,7 +4,7 @@ metadata:
   name: notebook-rental-web
   namespace: argocd
 spec:
-  project: default
+  project: notebook-rental
   source:
     repoURL: https://github.com/notebook-rental/deploy.git
     targetRevision: main

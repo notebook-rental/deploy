@@ -59,7 +59,7 @@ jobs:
               -kubernetes-version "$K8S_VERSION" \
               -schema-location default -schema-location "$crd" -
           done
-          kubeconform -strict -summary -schema-location default -schema-location "$crd" argocd/notebook-rental.yaml
+          kubeconform -strict -summary -schema-location default -schema-location "$crd" argocd/notebook-rental.yaml argocd/project.yaml
 
   actionlint:
     runs-on: ubuntu-latest

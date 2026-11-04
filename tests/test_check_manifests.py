@@ -108,7 +108,7 @@ def test_root_application_points_at_child_folder():
 def test_repo_contains_no_secret_manifests():
     """repo 어디에도 kind: Secret YAML이 없어야 한다(public repo)."""
     for path in ROOT.rglob("*.yaml"):
-        if ".git" in path.parts:
+        if ".git" in path.parts or ".venv" in path.parts:
             continue
         for doc in cm.load_manifests(path.read_text()):
             assert isinstance(doc, dict)
@@ -273,3 +273,48 @@ def test_main_reports_violations(tmp_path, capsys):
 def test_main_reports_render_errors(tmp_path, capsys):
     assert cm.main([str(tmp_path / "missing")]) == 1
     assert "[실패]" in capsys.readouterr().out
+
+
+# ---------------------------------------------------------------- Argo CD 프로젝트
+
+def load_project():
+    return cm.load_manifests((ROOT / "argocd" / "project.yaml").read_text())[0]
+
+
+def test_project_allows_repo_and_both_namespaces():
+    spec = load_project()["spec"]
+    assert spec["sourceRepos"] == ["https://github.com/notebook-rental/deploy.git"]
+    namespaces = {d["namespace"] for d in spec["destinations"]
+                  if d["server"] == "https://kubernetes.default.svc"}
+    assert namespaces == {"argocd", "notebook-rental"}
+    assert spec["clusterResourceWhitelist"] == []
+
+
+def test_project_never_allows_secrets():
+    allowed = {(r["group"], r["kind"]) for r in load_project()["spec"]["namespaceResourceWhitelist"]}
+    assert ("", "Secret") not in allowed
+
+
+@needs_kustomize
+def test_every_rendered_kind_is_allowed_by_project():
+    """새 리소스 종류(HPA 등)를 추가하면 프로젝트 허용 목록도 같이 고쳐야 sync가 된다."""
+    allowed = {(r["group"], r["kind"]) for r in load_project()["spec"]["namespaceResourceWhitelist"]}
+    targets = cm.default_targets(ROOT) + [ROOT / "argocd" / "apps"]
+    for target in targets:
+        for m in cm.render(target):
+            group = m["apiVersion"].split("/")[0] if "/" in m["apiVersion"] else ""
+            assert (group, m["kind"]) in allowed, f"{target.name}: {m['kind']}"
+
+
+@needs_kustomize
+def test_all_applications_use_project_and_allowed_destinations():
+    spec = load_project()["spec"]
+    dests = {(d["server"], d["namespace"]) for d in spec["destinations"]}
+    apps = cm.render(ROOT / "argocd" / "apps")
+    apps.append(cm.load_manifests((ROOT / "argocd" / "notebook-rental.yaml").read_text())[0])
+    for app in apps:
+        assert app["metadata"]["namespace"] == "argocd"
+        assert app["spec"]["project"] == "notebook-rental"
+        d = app["spec"]["destination"]
+        assert (d["server"], d["namespace"]) in dests
+        assert app["spec"]["source"]["repoURL"] in spec["sourceRepos"]
