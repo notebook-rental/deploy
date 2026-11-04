@@ -12,7 +12,7 @@ images:
     newTag: e95a6fac5bc6c97f031cced57cfdd655cc2c2618
 
 patches:
-  # MinIO 호스트 storage.java21.net 을 클러스터 안에서는 10.116.64.20 으로 보낸다(marco 요청, 2026-11-04).
+  # MinIO 호스트 storage.java21.net 을 클러스터 안에서는 10.116.64.12로 보낸다(marco 요청, 2026-11-04. 처음 적은 .20은 틀린 주소였다).
   # 파드의 /etc/hosts 에 직접 적으므로 MINIO_ENDPOINT(Rancher Secret)는 호스트 이름 그대로 둔다.
   # ml은 DB에 접속하지 않으므로 s3.java21.net 은 넣지 않는다. 10.x 는 사설 주소라 밖에서는 닿지 않는다.
   - target:
@@ -22,7 +22,7 @@ patches:
       - op: add
         path: /spec/template/spec/hostAliases
         value:
-          - ip: 10.116.64.20
+          - ip: 10.116.64.12
             hostnames:
               - storage.java21.net
   # ghcr 패키지가 Private인 동안 이미지를 받으려면 로그인 정보가 필요하다. Rancher에서 만든 Secret ghcr-pull 을 쓴다.

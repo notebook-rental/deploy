@@ -15,7 +15,7 @@ kubectl -n notebook-rental logs <파드 이름> --previous # 직전에 죽은 �
 |------|----|------------------|
 | `ImagePullBackOff` / `ErrImagePull` | 이미지를 못 받음 | ① 태그가 아직 `bootstrap` — 실제 이미지가 없다. 코드 repo의 첫 release가 끝나 `newTag`가 SHA로 바뀌면 풀린다(없는 태그도 ghcr는 `403 Forbidden`으로 답할 수 있다). ② 패키지가 Private — Public으로 바꾸거나 `ghcr-pull` Secret 확인([secrets.md](secrets.md) 3절). Events에 `anonymous token`이 보이면 로그인 정보 없이 받으려 한 것이다. ③ 태그 오타 |
 | `CreateContainerConfigError` | 컨테이너 설정을 만들지 못함 | Secret `notebook-rental-secrets`가 없거나 키가 빠졌다. Events에 `couldn't find key ML_MINIO_ACCESS_KEY` 처럼 빠진 키 이름이 나온다 |
-| `CrashLoopBackOff` | 시작했다가 계속 죽음 | 로그(`--previous`) 확인. api는 DB 접속 실패(`DB_URL`, 방화벽), ml은 MinIO 접속·모델 다운로드 실패가 흔하다. 클러스터 안에서 DB 호스트 `s3.java21.net`은 `10.116.64.13`(api), MinIO 호스트 `storage.java21.net`은 `10.116.64.20`(api, ml)으로 `hostAliases`에 고정돼 있다(`kubectl -n notebook-rental exec deploy/api -- cat /etc/hosts`로 확인). 주소가 바뀌면 `overlays/prod/api`, `overlays/prod/ml-inference`의 `kustomization.yaml`을 고친다 |
+| `CrashLoopBackOff` | 시작했다가 계속 죽음 | 로그(`--previous`) 확인. api는 DB 접속 실패(`DB_URL`, 방화벽), ml은 MinIO 접속·모델 다운로드 실패가 흔하다. 클러스터 안에서 DB 호스트 `s3.java21.net`은 `10.116.64.13`(api), MinIO 호스트 `storage.java21.net`은 `10.116.64.12`(api, ml)으로 `hostAliases`에 고정돼 있다(`kubectl -n notebook-rental exec deploy/api -- cat /etc/hosts`로 확인). 주소가 바뀌면 `overlays/prod/api`, `overlays/prod/ml-inference`의 `kustomization.yaml`을 고친다 |
 | `Running`인데 `0/1 Ready` | 준비 확인 통과 못 함 | ml은 모델 로드·워밍업 중이면 정상(몇 분). 계속되면 로그 확인. api는 DB 연결 확인 |
 | `OOMKilled` | 메모리 한도 초과로 강제 종료 | 메모리 limit을 늘리거나(overlay 패치) 메모리 사용을 줄인다 |
 | `Pending` | 놓을 서버가 없음 | Events에 `Insufficient cpu/memory`. ml은 CPU 4를 요구하므로 노드 여유를 확인 |

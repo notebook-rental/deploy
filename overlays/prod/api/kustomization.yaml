@@ -22,9 +22,9 @@ patches:
         path: /spec/template/spec/imagePullSecrets
         value:
           - name: ghcr-pull
-  # 클러스터 안에서는 외부 서비스 호스트를 사설 주소로 보낸다(marco 요청, 2026-11-04).
+  # 클러스터 안에서는 외부 서비스 호스트를 사설 주소로 보낸다(marco 요청, 2026-11-04. 처음 적은 .20은 틀린 주소였다).
   #   DB    s3.java21.net      → 10.116.64.13
-  #   MinIO storage.java21.net → 10.116.64.20
+  #   MinIO storage.java21.net → 10.116.64.12
   # 일반 DNS는 다른 주소를 돌려주므로, 파드의 /etc/hosts 에 직접 적는다(hostAliases).
   # DB_URL, MINIO_ENDPOINT(Rancher Secret)는 호스트 이름 그대로 두면 된다. 10.x 는 사설 주소라 밖에서는 닿지 않는다.
   - target:
@@ -37,7 +37,7 @@ patches:
           - ip: 10.116.64.13
             hostnames:
               - s3.java21.net
-          # MinIO 호스트 storage.java21.net 은 클러스터 안에서 10.116.64.20 으로(marco 요청, 2026-11-04).
-          - ip: 10.116.64.20
+          # MinIO 호스트 storage.java21.net 은 클러스터 안에서 10.116.64.12로(marco 요청, 2026-11-04. 처음 적은 .20은 틀린 주소였다).
+          - ip: 10.116.64.12
             hostnames:
               - storage.java21.net
