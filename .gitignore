@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+coverage.xml
+.venv/
+# 비밀값 파일은 어떤 이름이든 올리지 않는다.
+*.env
+.env*
+secret*.yaml

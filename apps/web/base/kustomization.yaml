@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# 직원·관리자 웹 앱(React SPA 정적 파일을 비루트 nginx가 내보낸다).
+labels:
+  - pairs:
+      app.kubernetes.io/name: web
+      app.kubernetes.io/part-of: notebook-rental
+    includeSelectors: false
+    includeTemplates: true
+
+resources:
+  - deployment.yaml
+  - service.yaml
+  - pdb.yaml
+  - networkpolicy.yaml

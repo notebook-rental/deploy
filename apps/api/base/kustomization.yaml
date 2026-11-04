@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# 업무 API(Spring Boot). 값이 환경마다 다른 것(이미지 태그, 자원, replicas)은 overlays/prod 에서 바꾼다.
+labels:
+  - pairs:
+      app.kubernetes.io/name: api
+      app.kubernetes.io/part-of: notebook-rental
+    # 선택자(selector)는 각 파일에 직접 적는다. includeSelectors를 켜면 NetworkPolicy의
+    # from 선택자까지 api 이름표로 바뀌어 ml-inference 허용 규칙이 깨진다.
+    includeSelectors: false
+    includeTemplates: true
+
+resources:
+  - configmap.yaml
+  - deployment.yaml
+  - service.yaml
+  - pdb.yaml
+  - networkpolicy.yaml

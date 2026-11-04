@@ -1,0 +1,27 @@
+# api 파드로 들어오는 연결은 Ingress Controller와 ml-inference 파드에서만 받는다.
+# (/internal/** 는 Ingress에 없어서 밖에서 못 오지만, 같은 클러스터의 다른 앱도 막으려고 둔다.)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: api
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        # Ingress Controller 파드. 어느 네임스페이스에 있든 이름표로 찾는다.
+        # 일반 설치는 ingress-nginx, Rancher RKE2 기본 설치는 rke2-ingress-nginx 이름표를 쓴다.
+        - namespaceSelector: {}
+          podSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values: ["ingress-nginx", "rke2-ingress-nginx"]
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ml-inference
+      ports:
+        - port: 8080
+          protocol: TCP

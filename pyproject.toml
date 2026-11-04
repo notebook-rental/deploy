@@ -1,0 +1,13 @@
+# 이 repo의 Python은 매니페스트 규칙 검사기(tools/)와 그 테스트(tests/)뿐이다.
+[project]
+name = "notebook-rental-deploy-tools"
+version = "0.1.0"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "--cov=tools --cov-report=term-missing --cov-fail-under=80"
+
+[tool.coverage.run]
+branch = true

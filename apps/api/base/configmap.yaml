@@ -1,0 +1,15 @@
+# 비밀이 아닌 설정만 둔다. 비밀값은 Rancher에서 만든 Secret notebook-rental-secrets 에 있다.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-config
+data:
+  SPRING_PROFILES_ACTIVE: prod
+  APP_PROFILE: prod
+  STORAGE_BUCKET: notebook-rental
+  # 같은 네임스페이스의 Service 이름으로 부른다(클러스터 내부 DNS).
+  ML_BASE_URL: http://ml-inference:8000
+  # 모든 ml 파드에 알림(/prefetch, /models/reload)을 보낼 때 쓰는 headless Service 이름.
+  ML_HEADLESS_HOST: ml-inference-headless
+  ML_PORT: "8000"
+  JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError

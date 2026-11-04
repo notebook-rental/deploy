@@ -1,0 +1,14 @@
+# api가 /quality, /compare, /assist/segment 를 부를 때 쓰는 일반 Service.
+# 요청 하나를 파드 하나에 나눠 보낸다(로드밸런싱).
+apiVersion: v1
+kind: Service
+metadata:
+  name: ml-inference
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: ml-inference
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http

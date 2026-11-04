@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# CPU 추론 서비스(Python FastAPI). 클러스터 안에서만 열린다(Ingress에 없음).
+labels:
+  - pairs:
+      app.kubernetes.io/name: ml-inference
+      app.kubernetes.io/part-of: notebook-rental
+    # 선택자는 각 파일에 직접 적는다(api base의 설명 참고).
+    includeSelectors: false
+    includeTemplates: true
+
+resources:
+  - configmap.yaml
+  - deployment.yaml
+  - service.yaml
+  - service-headless.yaml
+  - pdb.yaml
+  - networkpolicy.yaml

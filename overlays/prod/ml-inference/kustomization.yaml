@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: notebook-rental
+
+resources:
+  - ../../../apps/ml-inference/base
+
+# CI(코드 repo의 release 워크플로)가 newTag 를 git SHA로 바꿔 커밋한다. 손으로 바꾸지 않는다.
+images:
+  - name: ghcr.io/notebook-rental/ml-inference
+    newTag: bootstrap

@@ -1,0 +1,21 @@
+# web 파드로 들어오는 연결은 Ingress Controller에서만 받는다.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: web
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: web
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector: {}
+          podSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values: ["ingress-nginx", "rke2-ingress-nginx"]
+      ports:
+        - port: 8080
+          protocol: TCP
