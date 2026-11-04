@@ -89,7 +89,7 @@ def test_every_workload_uses_pull_secret(app):
 def test_ml_keeps_host_alias_with_pull_secret():
     manifests = cm.render(ROOT / "overlays" / "prod" / "ml-inference")
     spec = cm.of_kind(manifests, "Deployment")[0]["spec"]["template"]["spec"]
-    assert spec["hostAliases"] == [{"ip": "10.116.64.20", "hostnames": ["storage.java21.net"]}]
+    assert spec["hostAliases"] == [{"ip": "10.116.64.12", "hostnames": ["storage.java21.net"]}]
 
 
 @needs_kustomize
@@ -364,7 +364,7 @@ def test_api_routes_db_host_to_internal_address():
     spec = cm.of_kind(manifests, "Deployment")[0]["spec"]["template"]["spec"]
     assert spec["hostAliases"] == [
         {"ip": "10.116.64.13", "hostnames": ["s3.java21.net"]},
-        {"ip": "10.116.64.20", "hostnames": ["storage.java21.net"]},
+        {"ip": "10.116.64.12", "hostnames": ["storage.java21.net"]},
     ]
     # 이미지 받기용 비밀값 패치도 그대로 남아 있어야 한다.
     assert spec["imagePullSecrets"] == [{"name": "ghcr-pull"}]
@@ -372,7 +372,7 @@ def test_api_routes_db_host_to_internal_address():
 
 @needs_kustomize
 def test_ml_routes_minio_host_to_internal_address():
-    """ml은 MinIO만 쓴다: storage.java21.net → 10.116.64.20."""
+    """ml은 MinIO만 쓴다: storage.java21.net → 10.116.64.12."""
     manifests = cm.render(ROOT / "overlays" / "prod" / "ml-inference")
     spec = cm.of_kind(manifests, "Deployment")[0]["spec"]["template"]["spec"]
-    assert spec["hostAliases"] == [{"ip": "10.116.64.20", "hostnames": ["storage.java21.net"]}]
+    assert spec["hostAliases"] == [{"ip": "10.116.64.12", "hostnames": ["storage.java21.net"]}]
