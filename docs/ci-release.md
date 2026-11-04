@@ -143,7 +143,7 @@ ml repo에는 학습 코드도 함께 있으므로, 추론 서비스 Dockerfile 
 1. GitHub `notebook-rental` 조직 → **Packages** 탭 → 패키지(`api`, `web`, `ml-inference`) 선택
 2. 오른쪽 **Package settings** → 맨 아래 **Danger Zone → Change visibility → Public**
 
-- `api` repo가 Private인 동안은 `api` 패키지를 Private으로 두고 Rancher Secret `ghcr-pull`로 받는다([secrets.md](secrets.md) 3절).
+- 패키지를 Private으로 두어도 된다. 세 앱 모두 Rancher Secret `ghcr-pull`로 로그인해서 받는다([secrets.md](secrets.md) 3절).
 - 조직 설정에서 Public 패키지 생성이 막혀 있으면: 조직 **Settings → Packages → Package creation**에서 Public을 허용한다.
 
 ## 5. 배포가 안 될 때 확인 순서
