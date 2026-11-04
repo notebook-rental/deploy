@@ -22,3 +22,16 @@ patches:
         path: /spec/template/spec/imagePullSecrets
         value:
           - name: ghcr-pull
+  # DB 호스트 s3.java21.net 을 클러스터 안에서는 10.116.64.13 으로 보낸다(marco 요청, 2026-11-04).
+  # 일반 DNS는 다른 주소(10.116.64.11)를 돌려주므로, 파드의 /etc/hosts 에 직접 적는다(hostAliases).
+  # DB_URL(Rancher Secret)은 호스트 이름 그대로 두면 된다. 10.x 는 사설 주소라 밖에서는 닿지 않는다.
+  - target:
+      kind: Deployment
+      name: api
+    patch: |-
+      - op: add
+        path: /spec/template/spec/hostAliases
+        value:
+          - ip: 10.116.64.13
+            hostnames:
+              - s3.java21.net

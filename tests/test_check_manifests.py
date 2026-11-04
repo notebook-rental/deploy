@@ -318,3 +318,13 @@ def test_all_applications_use_project_and_allowed_destinations():
         d = app["spec"]["destination"]
         assert (d["server"], d["namespace"]) in dests
         assert app["spec"]["source"]["repoURL"] in spec["sourceRepos"]
+
+
+@needs_kustomize
+def test_api_routes_db_host_to_internal_address():
+    """DB 호스트 s3.java21.net 은 api 파드 안에서 10.116.64.13 으로 가야 한다."""
+    manifests = cm.render(ROOT / "overlays" / "prod" / "api")
+    spec = cm.of_kind(manifests, "Deployment")[0]["spec"]["template"]["spec"]
+    assert spec["hostAliases"] == [{"ip": "10.116.64.13", "hostnames": ["s3.java21.net"]}]
+    # 이미지 받기용 비밀값 패치도 그대로 남아 있어야 한다.
+    assert spec["imagePullSecrets"] == [{"name": "ghcr-pull"}]
