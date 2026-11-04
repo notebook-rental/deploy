@@ -31,18 +31,61 @@ notebook-rental (부모, argocd/notebook-rental.yaml)      ← 처음 한 번만
 
 repo가 공개라 Argo CD에 repo 접속 정보(비밀번호)를 따로 등록할 필요가 없다.
 
-### 방법 A: kubectl (가장 간단)
+순서는 **① 프로젝트 → ② 부모 앱**이다. 모든 앱이 프로젝트 `notebook-rental`에 속하므로 프로젝트가 먼저 있어야 한다.
 
-Rancher 오른쪽 위 **Kubectl Shell** 또는 내 PC에서:
+### ① 프로젝트 `notebook-rental` (AppProject)
+
+> **프로젝트(AppProject)**: Argo CD 앱 여러 개를 묶고 "어느 repo를 읽고, 어느 클러스터·네임스페이스에, 어떤 종류의 리소스를 만들 수 있는지"를 정하는 울타리.
+> 이 서비스 앱이 실수로 다른 네임스페이스나 클러스터 전체 설정을 건드리지 못하게 한다.
+
+[`argocd/project.yaml`](../argocd/project.yaml)에 정의돼 있다.
+
+| 항목 | 값 | 이유 |
+|------|----|------|
+| Source repositories | `https://github.com/notebook-rental/deploy.git` | 이 repo만 읽는다 |
+| Destinations | `https://kubernetes.default.svc` + 네임스페이스 `argocd` | 부모 앱이 자식 Application을 만드는 곳 |
+| | `https://kubernetes.default.svc` + 네임스페이스 `notebook-rental` | 자식 앱이 실제 서비스를 배포하는 곳 |
+| Cluster resource allow list | 없음 | Namespace, ClusterRole 같은 클러스터 전체 리소스는 만들지 않는다 |
+| Namespace resource allow list | Application, ConfigMap, Service, Deployment, PodDisruptionBudget, NetworkPolicy, Ingress | 이 repo가 쓰는 종류만. **Secret은 일부러 뺐다**(Rancher에서 직접 관리) |
+
+이 파일은 부모 앱이 관리하지 않는다(`argocd/apps` 밖에 있음). 앱이 자기 울타리를 스스로 넓힐 수 없게 하려는 것이다.
+그래서 프로젝트를 바꿀 때는 이 파일을 고친 뒤 **다시 직접 적용**한다.
+
+kubectl로 적용(Rancher **Kubectl Shell** 또는 내 PC):
+
+```bash
+kubectl apply -n argocd -f https://raw.githubusercontent.com/notebook-rental/deploy/main/argocd/project.yaml
+```
+
+화면에서 이미 같은 이름의 프로젝트를 만들었어도 위 명령을 쓰면 된다. 파일에 있는 항목은 파일 값으로 바뀐다.
+다만 파일에 없는 항목(예: 화면에서 넣은 DESTINATION SERVICE ACCOUNTS)은 그대로 남으니 아래 설명대로 화면에서 지운다.
+화면에서 직접 채우려면 Settings → Projects → `notebook-rental`에서 위 표대로 넣는다.
+
+**DESTINATION SERVICE ACCOUNTS는 비워 둔다.** 이 항목은 Argo CD가 "다른 서비스 계정 이름으로 배포하기"(impersonation) 기능을 켰을 때만 쓰는 설정이다.
+켜져 있는데 그 계정(예: `in-cluster`)이 없으면 sync가 권한 오류로 실패한다. 기본은 꺼져 있어 보통은 영향이 없지만, 헷갈리지 않게 지워 둔다(EDIT → 줄 삭제 → SAVE).
+
+### ② 부모 앱 `notebook-rental`
+
+방법 A, kubectl:
 
 ```bash
 kubectl apply -n argocd -f https://raw.githubusercontent.com/notebook-rental/deploy/main/argocd/notebook-rental.yaml
 ```
 
-### 방법 B: Argo CD 화면
+방법 B, Argo CD 화면: **+ NEW APP** → 오른쪽 위 **EDIT AS YAML** → [`argocd/notebook-rental.yaml`](../argocd/notebook-rental.yaml) 내용을 붙여넣기 → **SAVE** → **CREATE**
 
-1. Argo CD 접속 → **+ NEW APP** → 오른쪽 위 **EDIT AS YAML**
-2. [`argocd/notebook-rental.yaml`](../argocd/notebook-rental.yaml) 내용을 붙여넣기 → **SAVE** → **CREATE**
+칸마다 직접 넣는다면:
+
+| 칸 | 값 |
+|----|----|
+| Application Name | `notebook-rental` |
+| Project Name | `notebook-rental` |
+| Sync Policy | Automatic, PRUNE RESOURCES와 SELF HEAL 체크 |
+| Repository URL | `https://github.com/notebook-rental/deploy.git` |
+| Revision | `main` |
+| Path | `argocd/apps` (`argocd`로 두면 하위 폴더를 읽지 않아 자식 앱이 안 생긴다) |
+| Cluster URL | `https://kubernetes.default.svc` |
+| Namespace | `argocd` (Application 객체는 Argo CD가 읽는 `argocd` 네임스페이스에 있어야 한다) |
 
 등록하면 1~2분 안에 자식 Application 4개가 생기고 각자 동기화를 시작한다.
 
