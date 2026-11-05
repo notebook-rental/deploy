@@ -9,7 +9,7 @@ resources:
 # CI(코드 repo의 release 워크플로)가 newTag 를 git SHA로 바꿔 커밋한다. 손으로 바꾸지 않는다.
 images:
   - name: ghcr.io/notebook-rental/web
-    newTag: f28a75c2eadd250efef66272588d77ef79143eab
+    newTag: 9e991b655c03971951398d44f72b8f6dcc9fab0a
 
 patches:
   # ghcr 패키지가 Private인 동안 이미지를 받으려면 로그인 정보가 필요하다. Rancher에서 만든 Secret ghcr-pull 을 쓴다.
